@@ -68,6 +68,7 @@ async def run_conversation(
                 "timestamp": datetime.utcnow().isoformat(),
                 "conversation_id": conversation_id,
                 "tool_name": fn_name,
+                "server_name": registry._tool_map.get(fn_name, "unknown"),
                 "arguments": fn_args,
                 "policy_decision": decision["action"],
                 "rule_id": decision.get("rule_id"),
