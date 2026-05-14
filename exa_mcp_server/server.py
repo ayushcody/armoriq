@@ -41,10 +41,13 @@ def main():
                 args = msg["params"].get("arguments", {})
                 if name == "search_web":
                     if not exa:
-                        text = "Error: EXA_API_KEY not configured."
+                        text = "Error: EXA_API_KEY not configured on server."
                     else:
                         res = exa.search(args["query"], num_results=args.get("num_results", 5), use_autoprompt=True)
-                        text = f"Exa Search for '{args['query']}':\n" + "\n".join([f"- {r.title} ({r.url})" for r in res.results])
+                        if not res.results:
+                            text = f"Exa Search for '{args['query']}': No results found on the live web."
+                        else:
+                            text = f"Exa Search Results for '{args['query']}':\n" + "\n".join([f"- {r.title} ({r.url})\n  Highlight: {r.author if hasattr(r, 'author') else 'N/A'}" for r in res.results])
                 result = {"content": [{"type": "text", "text": text}]}
 
             if result is not None:

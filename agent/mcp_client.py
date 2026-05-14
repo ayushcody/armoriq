@@ -19,11 +19,13 @@ class StdioMCPClient:
         self._pending: dict[str, asyncio.Future] = {}
 
     async def start(self):
+        import os
         self._process = await asyncio.create_subprocess_exec(
             self.command, *self.args,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,   # captures server logs cleanly
+            stderr=asyncio.subprocess.PIPE,
+            env=os.environ.copy()
         )
         asyncio.create_task(self._read_loop())
         await self._send("initialize", {
