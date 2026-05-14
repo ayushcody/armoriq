@@ -99,6 +99,12 @@ def main():
                 print(json.dumps({"jsonrpc": "2.0", "id": msg_id, "result": result}), flush=True)
         except Exception as e:
             logger.error(f"Error handling message: {e}")
+            if msg_id:
+                print(json.dumps({
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {"code": -32603, "message": str(e)}
+                }), flush=True)
 
 if __name__ == "__main__":
     main()
