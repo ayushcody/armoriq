@@ -8,10 +8,20 @@ interface Message {
 }
 
 export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = sessionStorage.getItem('chat_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | undefined>();
+  const [conversationId, setConversationId] = useState<string | undefined>(() => {
+    return sessionStorage.getItem('chat_conversation_id') || undefined;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('chat_messages', JSON.stringify(messages));
+    if (conversationId) sessionStorage.setItem('chat_conversation_id', conversationId);
+  }, [messages, conversationId]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
