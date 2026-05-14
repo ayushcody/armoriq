@@ -77,6 +77,12 @@ def get_groq_config():
     return {"is_configured": llm.is_configured()}
 
 
+@app.get("/")
+@app.get("/health")
+def root_health():
+    return {"status": "ok"}
+
+
 @app.get("/api/health")
 def health():
     tools = registry.get_all_tools()
