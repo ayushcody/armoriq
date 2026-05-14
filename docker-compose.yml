@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      LM_STUDIO_BASE_URL: http://host.docker.internal:1234/v1
+      LM_STUDIO_MODEL: ${LM_STUDIO_MODEL}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL}
+      EXA_API_KEY: ${EXA_API_KEY}
+    volumes:
+      - ./mcp_servers.json:/app/mcp_servers.json
+      - db_data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "5173:80"
+    depends_on:
+      - agent
+
+volumes:
+  db_data:
