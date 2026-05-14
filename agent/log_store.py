@@ -22,6 +22,7 @@ class LogStore:
             CREATE TABLE IF NOT EXISTS tool_calls (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TEXT, conversation_id TEXT, tool_name TEXT,
+                summary TEXT, server_name TEXT,
                 arguments TEXT, policy_decision TEXT, rule_id TEXT,
                 reason TEXT, result_preview TEXT, approval_id TEXT
             )
@@ -37,8 +38,9 @@ class LogStore:
         async with aiosqlite.connect(DB_PATH) as db:
             await self._ensure_schema(db)
             await db.execute(
-                "INSERT INTO tool_calls (timestamp, conversation_id, tool_name, arguments, policy_decision, rule_id, reason, result_preview, approval_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO tool_calls (timestamp, conversation_id, tool_name, summary, server_name, arguments, policy_decision, rule_id, reason, result_preview, approval_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (entry.get("timestamp"), entry.get("conversation_id"), entry.get("tool_name"),
+                 entry.get("summary"), entry.get("server_name"),
                  json.dumps(entry.get("arguments", {})), entry.get("policy_decision"),
                  entry.get("rule_id"), entry.get("reason"), entry.get("result_preview"),
                  entry.get("approval_id")))

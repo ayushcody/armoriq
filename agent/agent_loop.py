@@ -65,10 +65,26 @@ async def run_conversation(
             # *** POLICY INTERCEPT — happens before every single tool execution ***
             decision = policy.evaluate({"name": fn_name, "args": fn_args})
 
+            # Generate human-readable summary
+            summary = f"Called {fn_name}"
+            if fn_name == "search_web" or fn_name == "get_web_answer":
+                summary = f"Searching for '{fn_args.get('query')}'"
+            elif fn_name == "get_page_contents":
+                summary = f"Crawling {len(fn_args.get('urls', []))} URLs"
+            elif fn_name == "scale_service":
+                summary = f"Scaling {fn_args.get('service_name')} to {fn_args.get('replicas')} replicas"
+            elif fn_name == "get_service_logs":
+                summary = f"Fetching logs for {fn_args.get('service_name')}"
+            elif fn_name == "run_healthcheck":
+                summary = f"Checking health of {fn_args.get('service_name')}"
+            elif fn_name == "trigger_alert":
+                summary = f"Alerting: {fn_args.get('message')[:30]}..."
+
             log_entry = {
                 "timestamp": datetime.utcnow().isoformat(),
                 "conversation_id": conversation_id,
                 "tool_name": fn_name,
+                "summary": summary,
                 "server_name": registry._tool_map.get(fn_name, "unknown"),
                 "arguments": fn_args,
                 "policy_decision": decision["action"],

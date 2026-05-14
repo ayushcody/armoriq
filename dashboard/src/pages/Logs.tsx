@@ -69,10 +69,10 @@ export default function Logs() {
             <thead>
               <tr>
                 <th>Timestamp</th>
-                <th>Tool</th>
                 <th>Action</th>
-                <th>Reason</th>
-                <th>Conversation</th>
+                <th>Source</th>
+                <th>Status</th>
+                <th>Policy Reason</th>
               </tr>
             </thead>
             <tbody>
@@ -81,11 +81,18 @@ export default function Logs() {
               ) : filtered.map((log, i) => (
                 <>
                   <tr key={i} className="log-row" onClick={() => setExpanded(expanded === i ? null : i)}>
-                    <td style={{ fontSize: 12, fontFamily: 'monospace' }}>{log.timestamp?.slice(0, 19)}</td>
-                    <td style={{ fontWeight: 500, color: 'var(--cyan)' }}>{log.tool_name}</td>
+                    <td style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{log.timestamp?.split('T')[1].slice(0, 8)}</td>
+                    <td style={{ fontWeight: 500 }}>
+                      <div style={{ color: 'var(--text-primary)' }}>{log.summary || log.tool_name}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{log.tool_name}</div>
+                    </td>
+                    <td>
+                      <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--cyan)', border: '1px solid rgba(0,255,255,0.2)' }}>
+                        {log.server_name}
+                      </span>
+                    </td>
                     <td><span className={badgeClass(log.policy_decision)}>{log.policy_decision}</span></td>
-                    <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.reason || '—'}</td>
-                    <td style={{ fontSize: 11, fontFamily: 'monospace' }}>{log.conversation_id?.slice(0, 8)}</td>
+                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{log.reason || '—'}</td>
                   </tr>
                   {expanded === i && (
                     <tr key={`${i}-expand`}>
