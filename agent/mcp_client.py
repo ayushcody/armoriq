@@ -86,32 +86,25 @@ class SSEMCPClient:
         if api_key:
             self._headers["x-api-key"] = api_key
 
-    async def _post_sse(self, payload: dict) -> dict:
-        self._headers["Accept"] = "application/json, text/event-stream"
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(self.url, headers=self._headers, json=payload)
-            resp.raise_for_status()
-            text = resp.text
-            for line in text.splitlines():
-                if line.startswith("data: "):
-                    return json.loads(line[6:])
-            try:
-                return resp.json()
-            except json.JSONDecodeError:
-                raise RuntimeError(f"Failed to parse SSE response: {text}")
-
     async def list_tools(self) -> list[dict]:
-        res = await self._post_sse({"jsonrpc": "2.0", "id": "1", "method": "tools/list", "params": {}})
-        return res.get("result", {}).get("tools", [])
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(self.url, headers=self._headers, json={
+                "jsonrpc": "2.0", "id": "1", "method": "tools/list", "params": {}
+            })
+            resp.raise_for_status()
+            return resp.json().get("result", {}).get("tools", [])
 
     async def call_tool(self, name: str, arguments: dict) -> dict:
-        res = await self._post_sse({
-            "jsonrpc": "2.0", "id": "1", "method": "tools/call",
-            "params": {"name": name, "arguments": arguments}
-        })
-        if "error" in res:
-            raise RuntimeError(res["error"]["message"])
-        return res.get("result", {})
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(self.url, headers=self._headers, json={
+                "jsonrpc": "2.0", "id": "1", "method": "tools/call",
+                "params": {"name": name, "arguments": arguments}
+            })
+            resp.raise_for_status()
+            result = resp.json()
+            if "error" in result:
+                raise RuntimeError(result["error"]["message"])
+            return result["result"]
 
     async def stop(self):
         pass  # SSE clients are stateless
