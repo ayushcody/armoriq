@@ -114,6 +114,9 @@ function App() {
           </NavLink>
         </nav>
 
+        <div className="api-reload-btn" onClick={async () => { try { await fetch('/api/mcp/reload', {method: 'POST'}); const h = await fetchHealth(); setHealth(h); } catch {} }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </div>
         <div className="tool-count" onClick={() => setShowToolsModal(true)} style={{ cursor: 'pointer' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
           {toolCount} MCP Tools
@@ -133,8 +136,9 @@ function App() {
                 </div>
               ))}
             </div>
-            <div className="modal-actions" style={{ marginTop: 16 }}>
-              <button className="btn btn-primary" onClick={() => setShowToolsModal(false)}>Close</button>
+            <div className="modal-actions" style={{ marginTop: 16, display: 'flex', gap: 12 }}>
+              <button className="btn btn-secondary" onClick={async () => { try { await fetch('/api/mcp/reload', {method: 'POST'}); const h = await fetchHealth(); setHealth(h); } catch {} }}>Sync/Reload Servers</button>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setShowToolsModal(false)}>Close</button>
             </div>
           </div>
         </div>
