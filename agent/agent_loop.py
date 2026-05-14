@@ -102,10 +102,11 @@ async def run_conversation(
             await log_store.append_tool_call(log_entry)
 
             # Feed result back to LLM — regardless of block/allow/deny
+            safe_content = tool_result if isinstance(tool_result, str) else json.dumps(tool_result, default=str)
             messages.append({
                 "role": "tool",
                 "tool_call_id": call_id,
-                "content": tool_result if isinstance(tool_result, str) else json.dumps(tool_result),
+                "content": safe_content,
             })
 
 

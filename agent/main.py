@@ -54,16 +54,26 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Guarded Agent", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*", "https://armoriq.ayushchougula.in", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/api/chat")
 async def chat(body: dict):
-    return await run_conversation(
-        user_message=body["message"],
-        conversation_id=body.get("conversation_id"),
-        llm=llm, registry=registry, policy=policy, log_store=log_store,
-    )
+    try:
+        return await run_conversation(
+            user_message=body["message"],
+            conversation_id=body.get("conversation_id"),
+            llm=llm, registry=registry, policy=policy, log_store=log_store,
+        )
+    except Exception as e:
+        logging.error(f"Chat Route Error: {e}")
+        return {"error": str(e), "status": "error"}
 
 
 @app.post("/api/config/groq")
