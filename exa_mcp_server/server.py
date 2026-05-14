@@ -10,11 +10,11 @@ exa = Exa(exa_key) if exa_key else None
 TOOLS = [
     {
         "name": "search_web",
-        "description": "Search the live web using Exa. Returns a list of relevant URLs with titles and highlights.",
+        "description": "Search the live web. Returns URLs with titles and highlights. Use for general research.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "The search query (natural language works best)."},
+                "query": {"type": "string", "description": "Search query."},
                 "num_results": {"type": "integer", "default": 5}
             },
             "required": ["query"]
@@ -22,26 +22,22 @@ TOOLS = [
     },
     {
         "name": "get_web_answer",
-        "description": "Get a direct answer to a question based on a live web search. Best for factual questions.",
+        "description": "Get a direct, cited answer to a question using live web data. Best for factual lookups.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "The question to answer (e.g., 'What is the latest valuation of SpaceX?')"}
+                "query": {"type": "string", "description": "The question to answer."}
             },
             "required": ["query"]
         }
     },
     {
         "name": "get_page_contents",
-        "description": "Fetch the full text content of specific URLs for deep analysis.",
+        "description": "Fetch full text of specific URLs for deep analysis.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "urls": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "A list of URLs to crawl."
-                }
+                "urls": {"type": "array", "items": {"type": "string"}}
             },
             "required": ["urls"]
         }
@@ -59,7 +55,7 @@ def main():
             result = None
 
             if method == "initialize":
-                result = {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "web-search", "version": "1.0.0"}}
+                result = {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "web-search", "version": "1.1.0"}}
             elif method == "tools/list":
                 result = {"tools": TOOLS}
             elif method == "tools/call":
@@ -68,43 +64,44 @@ def main():
                 text = ""
 
                 if not exa:
-                    text = "Error: EXA_API_KEY not configured on server. Please set it in Render environment variables."
+                    text = "Error: EXA_API_KEY missing. Please set it in Render environment variables."
                 else:
-                    if name == "search_web":
-                        res = exa.search(args["query"], num_results=args.get("num_results", 5), use_autoprompt=True, contents={"highlights": True})
-                        if not res.results:
-                            text = f"Exa Search: No results found for '{args['query']}'."
-                        else:
-                            text = f"Top results for '{args['query']}':\n\n"
+                    try:
+                        if name == "search_web":
+                            res = exa.search(args["query"], num_results=args.get("num_results", 5), type="auto", contents={"highlights": True})
+                            if not res.results:
+                                text = f"No results found for '{args['query']}'."
+                            else:
+                                text = f"Results for '{args['query']}':\n\n"
+                                for r in res.results:
+                                    h = r.highlights[0] if getattr(r, 'highlights', None) else "No snippet."
+                                    text += f"### {r.title}\nURL: {r.url}\nSnippet: {h}\n\n"
+
+                        elif name == "get_web_answer":
+                            res = exa.answer(args["query"])
+                            text = f"Answer: {res.answer}\n\nSources:\n"
+                            for c in getattr(res, 'citations', []):
+                                text += f"- {getattr(c, 'title', 'Source')} ({getattr(c, 'url', 'N/A')})\n"
+
+                        elif name == "get_page_contents":
+                            res = exa.get_contents(args["urls"], text=True)
+                            text = "Contents:\n\n"
                             for r in res.results:
-                                highlight = r.highlights[0] if r.highlights else "No snippet available."
-                                text += f"### {r.title}\nURL: {r.url}\nSnippet: {highlight}\n\n"
-
-                    elif name == "get_web_answer":
-                        res = exa.answer(args["query"])
-                        text = f"Answer: {res.answer}\n\nSources used:\n"
-                        for c in res.citations:
-                            text += f"- {c.title} ({c.url})\n"
-
-                    elif name == "get_page_contents":
-                        res = exa.get_contents(args["urls"], text=True)
-                        text = "Extracted contents:\n\n"
-                        for r in res.results:
-                            content = r.text[:2000] + "..." if len(r.text) > 2000 else r.text
-                            text += f"--- CONTENT FROM {r.url} ---\n{content}\n\n"
+                                content = r.text[:1500] + "..." if len(r.text) > 1500 else r.text
+                                text += f"--- {r.url} ---\n{content}\n\n"
+                    except ValueError as ve:
+                        text = f"API Error: {str(ve)}"
+                    except Exception as e:
+                        text = f"Unexpected Error: {str(e)}"
 
                 result = {"content": [{"type": "text", "text": text}]}
 
             if result is not None:
                 print(json.dumps({"jsonrpc": "2.0", "id": msg_id, "result": result}), flush=True)
         except Exception as e:
-            logger.error(f"Error handling message: {e}")
+            logger.error(f"Fatal Server Error: {e}")
             if msg_id:
-                print(json.dumps({
-                    "jsonrpc": "2.0",
-                    "id": msg_id,
-                    "error": {"code": -32603, "message": str(e)}
-                }), flush=True)
+                print(json.dumps({"jsonrpc": "2.0", "id": msg_id, "error": {"code": -32603, "message": str(e)}}), flush=True)
 
 if __name__ == "__main__":
     main()
