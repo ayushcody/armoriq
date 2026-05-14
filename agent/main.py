@@ -66,6 +66,17 @@ async def chat(body: dict):
     )
 
 
+@app.post("/api/config/groq")
+def configure_groq(body: dict):
+    llm.set_api_key(body.get("api_key", ""))
+    return {"status": "configured" if llm.is_configured() else "cleared"}
+
+
+@app.get("/api/config/groq")
+def get_groq_config():
+    return {"is_configured": llm.is_configured()}
+
+
 @app.get("/api/health")
 def health():
     tools = registry.get_all_tools()

@@ -4,23 +4,40 @@ import Rules from './pages/Rules';
 import Logs from './pages/Logs';
 import Approvals from './pages/Approvals';
 import Stats from './pages/Stats';
-import { fetchHealth } from './api';
+import { fetchHealth, getGroqConfig, setGroqConfig } from './api';
 import './index.css';
 
 function App() {
   const [health, setHealth] = useState<any>(null);
   const [showToolsModal, setShowToolsModal] = useState(false);
+  const [groqConfigured, setGroqConfigured] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [isConfiguring, setIsConfiguring] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      try { setHealth(await fetchHealth()); } catch {}
+      try { 
+        setHealth(await fetchHealth()); 
+        const groqStatus = await getGroqConfig();
+        setGroqConfigured(groqStatus.is_configured);
+      } catch {}
     };
     load();
     const interval = setInterval(load, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const llmActive = health?.llm?.active;
+  const handleSaveGroqKey = async () => {
+    try {
+      const res = await setGroqConfig(apiKeyInput);
+      setGroqConfigured(res.status === 'configured');
+      setIsConfiguring(false);
+      setApiKeyInput('');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const toolCount = health?.mcp_tools ?? '—';
 
   return (
@@ -31,12 +48,31 @@ function App() {
           <p>AI Agent Policy Dashboard</p>
         </div>
 
-        {health && (
-          <div className={`llm-badge ${llmActive === 'groq' ? 'fallback' : 'primary'}`}>
-            <span className="dot" />
-            {llmActive === 'groq' ? 'Groq' : 'LM Studio'} Active
-          </div>
-        )}
+        <div style={{ padding: '0 16px', marginBottom: '24px' }}>
+          {!groqConfigured || isConfiguring ? (
+            <div style={{ background: 'var(--bg-input)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Configure Groq API</div>
+              <input 
+                type="password" 
+                placeholder="gsk_..." 
+                value={apiKeyInput}
+                onChange={e => setApiKeyInput(e.target.value)}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-dark)', color: '#fff', fontSize: '12px', marginBottom: '8px' }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-primary" onClick={handleSaveGroqKey} style={{ flex: 1, padding: '4px', fontSize: '12px' }}>Save Key</button>
+                {isConfiguring && groqConfigured && (
+                  <button className="btn btn-secondary" onClick={() => setIsConfiguring(false)} style={{ padding: '4px 8px', fontSize: '12px' }}>Cancel</button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="llm-badge primary" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderColor: 'var(--cyan)', background: 'rgba(0, 255, 204, 0.05)' }} onClick={() => setIsConfiguring(true)}>
+              <div><span className="dot" style={{ background: 'var(--cyan)' }} /> Groq Active</div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+          )}
+        </div>
 
         <nav className="nav-links">
           <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} id="nav-rules">

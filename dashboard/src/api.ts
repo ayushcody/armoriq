@@ -61,6 +61,19 @@ export async function fetchStats() {
   return res.json();
 }
 
+export async function getGroqConfig() {
+  const res = await fetch(`${API}/api/config/groq`);
+  return res.json();
+}
+
+export async function setGroqConfig(apiKey: string) {
+  const res = await fetch(`${API}/api/config/groq`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ api_key: apiKey }),
+  });
+  return res.json();
+}
+
 export async function sendChat(message: string, conversationId?: string) {
   const res = await fetch(`${API}/api/chat`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
