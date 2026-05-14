@@ -1,27 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { sendChat } from '../api';
 
-interface Message {
+export interface Message {
   role: 'user' | 'assistant';
   content: string;
   tokens?: { prompt: number; completion: number };
 }
 
-export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = sessionStorage.getItem('chat_messages');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | undefined>(() => {
-    return sessionStorage.getItem('chat_conversation_id') || undefined;
-  });
+interface ChatProps {
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  conversationId: string | undefined;
+  setConversationId: React.Dispatch<React.SetStateAction<string | undefined>>;
+}
 
-  useEffect(() => {
-    sessionStorage.setItem('chat_messages', JSON.stringify(messages));
-    if (conversationId) sessionStorage.setItem('chat_conversation_id', conversationId);
-  }, [messages, conversationId]);
+export default function Chat({ messages, setMessages, loading, setLoading, conversationId, setConversationId }: ChatProps) {
+  const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

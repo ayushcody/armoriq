@@ -4,7 +4,7 @@ import Rules from './pages/Rules';
 import Logs from './pages/Logs';
 import Approvals from './pages/Approvals';
 import Stats from './pages/Stats';
-import Chat from './pages/Chat';
+import Chat, { Message } from './pages/Chat';
 import { fetchHealth, getGroqConfig, setGroqConfig } from './api';
 import './index.css';
 
@@ -14,6 +14,21 @@ function App() {
   const [groqConfigured, setGroqConfigured] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isConfiguring, setIsConfiguring] = useState(false);
+
+  // Lifted Chat State
+  const [chatMessages, setChatMessages] = useState<Message[]>(() => {
+    const saved = sessionStorage.getItem('chat_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatConversationId, setChatConversationId] = useState<string | undefined>(() => {
+    return sessionStorage.getItem('chat_conversation_id') || undefined;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('chat_messages', JSON.stringify(chatMessages));
+    if (chatConversationId) sessionStorage.setItem('chat_conversation_id', chatConversationId);
+  }, [chatMessages, chatConversationId]);
 
   useEffect(() => {
     const load = async () => {
@@ -126,7 +141,7 @@ function App() {
 
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Chat />} />
+          <Route path="/" element={<Chat messages={chatMessages} setMessages={setChatMessages} loading={chatLoading} setLoading={setChatLoading} conversationId={chatConversationId} setConversationId={setChatConversationId} />} />
           <Route path="/rules" element={<Rules />} />
           <Route path="/logs" element={<Logs />} />
           <Route path="/approvals" element={<Approvals />} />
