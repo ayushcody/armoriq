@@ -20,6 +20,9 @@ class LLMClient:
     def __init__(self):
         self._client = None
         self.active_backend = "groq"
+        env_key = os.getenv("GROQ_API_KEY")
+        if env_key:
+            self.set_api_key(env_key)
         
     def set_api_key(self, api_key: str):
         if api_key:
