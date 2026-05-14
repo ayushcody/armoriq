@@ -6,18 +6,8 @@ logger = logging.getLogger("research-assistant")
 TOOLS = [
     {
         "name": "search_documentation",
-        "description": "Search internal documentation for architecture patterns or SOPs.",
+        "description": "Search internal architecture documentation and SOPs for patterns.",
         "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
-    },
-    {
-        "name": "get_system_metrics",
-        "description": "Retrieve historical performance metrics for a specific system component.",
-        "inputSchema": {"type": "object", "properties": {"component": {"type": "string"}}, "required": ["component"]}
-    },
-    {
-        "name": "summarize_incidents",
-        "description": "Summarize all infrastructure incidents from the last N days.",
-        "inputSchema": {"type": "object", "properties": {"days": {"type": "integer", "default": 7}}}
     }
 ]
 
@@ -39,11 +29,7 @@ def main():
                 name = msg["params"]["name"]
                 args = msg["params"].get("arguments", {})
                 if name == "search_documentation":
-                    text = f"Search result for '{args.get('query')}': Found 3 relevant architecture diagrams in /docs/arch."
-                elif name == "get_system_metrics":
-                    text = f"Metrics for {args.get('component')}: Avg Latency: 45ms, Throughput: 1.2k req/sec, Error Rate: 0.01%"
-                elif name == "summarize_incidents":
-                    text = f"Incident Summary (Last {args.get('days', 7)} days): 2 minor network blips, 1 database failover (resolved)."
+                    text = f"Internal Doc Search for '{args.get('query')}': Found architectural references in /docs/topology and /docs/security-policy."
                 result = {"content": [{"type": "text", "text": text}]}
 
             if result is not None:
