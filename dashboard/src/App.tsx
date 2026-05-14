@@ -4,6 +4,7 @@ import Rules from './pages/Rules';
 import Logs from './pages/Logs';
 import Approvals from './pages/Approvals';
 import Stats from './pages/Stats';
+import Chat from './pages/Chat';
 import { fetchHealth, getGroqConfig, setGroqConfig } from './api';
 import './index.css';
 
@@ -75,7 +76,11 @@ function App() {
         </div>
 
         <nav className="nav-links">
-          <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} id="nav-rules">
+          <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} id="nav-chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Agent Chat
+          </NavLink>
+          <NavLink to="/rules" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} id="nav-rules">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             Rules
           </NavLink>
@@ -121,7 +126,8 @@ function App() {
 
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Rules />} />
+          <Route path="/" element={<Chat />} />
+          <Route path="/rules" element={<Rules />} />
           <Route path="/logs" element={<Logs />} />
           <Route path="/approvals" element={<Approvals />} />
           <Route path="/stats" element={<Stats />} />

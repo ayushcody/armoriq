@@ -18,6 +18,7 @@ export default function Stats() {
     { label: 'Blocked Calls', value: stats.blocked_calls, sub: `${stats.blocked_pct}% of total`, color: 'var(--red)' },
     { label: 'Prompt Tokens', value: stats.total_prompt_tokens?.toLocaleString(), color: 'var(--green)' },
     { label: 'Completion Tokens', value: stats.total_completion_tokens?.toLocaleString(), color: 'var(--amber)' },
+    { label: 'Estimated Cost', value: `$${stats.estimated_cost}`, color: 'var(--cyan)' },
   ];
 
   return (
