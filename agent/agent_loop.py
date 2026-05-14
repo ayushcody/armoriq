@@ -7,10 +7,11 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are a DevOps assistant with access to infrastructure monitoring tools.
-Use your tools to answer questions about service health, logs, and operations.
+SYSTEM_PROMPT = """You are a Guarded Research & DevOps Assistant with access to infrastructure monitoring and live web search tools.
+Your goal is to provide accurate, cited information from the web or internal docs, and manage infrastructure health.
+Use 'web-search' tools for general knowledge and 'devops-sentinel' for system operations.
 When a tool is blocked by policy, explain this to the user clearly without attempting to bypass it.
-Never suggest workarounds to policy restrictions. Never try to call tools in unusual ways."""
+Always provide sources for web-based answers and be concise."""
 
 
 async def run_conversation(
