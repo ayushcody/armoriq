@@ -32,37 +32,28 @@ class MCPRegistry:
 
     async def _load_and_discover(self):
         logger.info(f"Loading MCP config from: {self.config_path}")
-        config = json.loads(Path(self.config_path).read_text())
-        for srv in config["servers"]:
-            try:
-                logger.info(f"Connecting to MCP server: {srv['name']}...")
-                client = self._build_client(srv)
-                if hasattr(client, "start"):
-                    await client.start()
-                raw_tools = await client.list_tools()
-                self._clients[srv["name"]] = client
-                for tool in raw_tools:
-                    self._tool_map[tool["name"]] = srv["name"]
-                    self._tools.append(self._to_openai_tool(tool))
-                logger.info(f"Successfully registered server [{srv['name']}] with {len(raw_tools)} tools")
-            except Exception as e:
-                logger.error(f"CRITICAL: Failed to connect to {srv['name']}: {str(e)}")
-                import traceback
-                logger.error(traceback.format_exc())
+        try:
+            config = json.loads(Path(self.config_path).read_text())
+            for srv in config["servers"]:
+                try:
+                    logger.info(f"Connecting to MCP server: {srv['name']}...")
+                    client = self._build_client(srv)
+                    if hasattr(client, "start"):
+                        await client.start()
+                    raw_tools = await client.list_tools()
+                    self._clients[srv["name"]] = client
+                    for tool in raw_tools:
+                        self._tool_map[tool["name"]] = srv["name"]
+                        self._tools.append(self._to_openai_tool(tool))
+                    logger.info(f"Successfully registered server [{srv['name']}] with {len(raw_tools)} tools")
+                except Exception as e:
+                    logger.error(f"CRITICAL: Failed to connect to {srv['name']}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Failed to read MCP config: {e}")
 
     def _build_client(self, srv: dict):
         if srv["type"] == "stdio":
-            command = srv["command"]
-            args = []
-            for arg in srv.get("args", []):
-                # If path is relative to config, make it absolute for Docker
-                if arg.endswith(".py") and (arg.startswith("..") or arg.startswith(".")):
-                    abs_path = os.path.abspath(os.path.join(os.path.dirname(self.config_path), arg))
-                    args.append(abs_path)
-                    logger.info(f"Resolved relative path for {srv['name']}: {arg} -> {abs_path}")
-                else:
-                    args.append(arg)
-            return StdioMCPClient(srv["name"], command, args)
+            return StdioMCPClient(srv["name"], srv["command"], srv.get("args", []))
         elif srv["type"] == "sse":
             api_key = os.environ.get(srv["api_key_env"]) if srv.get("api_key_env") else None
             return SSEMCPClient(srv["name"], srv["url"], api_key)
