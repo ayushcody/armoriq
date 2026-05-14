@@ -4,7 +4,8 @@ import Rules from './pages/Rules';
 import Logs from './pages/Logs';
 import Approvals from './pages/Approvals';
 import Stats from './pages/Stats';
-import Chat, { Message } from './pages/Chat';
+import Chat from './pages/Chat';
+import type { Message } from './pages/Chat';
 import { fetchHealth, getGroqConfig, setGroqConfig } from './api';
 import './index.css';
 
