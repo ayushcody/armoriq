@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchRules, createRule, deleteRule, toggleRule, fetchHealth } from '../api';
 
-const RULE_TYPES = ['BLOCK_TOOL', 'REQUIRE_APPROVAL', 'VALIDATE_INPUT', 'BLOCK_KEYWORD'] as const;
 
 export default function Rules() {
   const [rules, setRules] = useState<any[]>([]);
