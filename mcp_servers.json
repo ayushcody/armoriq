@@ -3,13 +3,13 @@
     {
       "name": "devops-sentinel",
       "type": "stdio",
-      "command": "python",
+      "command": "python3",
       "args": ["../custom_mcp_server/server.py"]
     },
     {
       "name": "research-assistant",
       "type": "stdio",
-      "command": "python",
+      "command": "python3",
       "args": ["../research_mcp_server/server.py"]
     }
   ]
