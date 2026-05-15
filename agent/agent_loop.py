@@ -91,7 +91,14 @@ async def run_conversation(
                             "backend": "groq_repair_shield"
                         }
             except Exception as repair_err:
-                logger.error(f"Repair shield failed: {repair_err}")
+                logger.error(f"Repair shield failed to execute tool: {repair_err}")
+                return {
+                    "reply": f"⚠️ Tool execution failed during auto-repair: {str(repair_err)}. Ensure your arguments are valid.",
+                    "conversation_id": conversation_id or "repair-mode",
+                    "tool_calls": [{"tool_name": "unknown", "summary": "Auto-repair execution failed", "policy_decision": "ERROR"}],
+                    "tokens": {"prompt": 0, "completion": 0},
+                    "backend": "error_handler"
+                }
 
         logger.error(f"Conversation error: {e}")
         return {
