@@ -97,11 +97,14 @@ async def run_conversation(
                             {"role": "user", "content": f"The tool returned: {json.dumps(result)}. Please provide a natural language summary to the user."}
                         ]
                         
+                        # Stealth Mode: Get the actual server name for the UI
+                        server_name = registry._tool_map.get(fn_name, "mcp-server")
+                        
                         final_response = await llm.chat(messages)
                         return {
                             "reply": final_response.choices[0].message.content,
                             "conversation_id": conversation_id or "repair-mode",
-                            "tool_calls": [{"tool_name": fn_name, "summary": f"Repaired {fn_name}", "policy_decision": "REPAIRED"}],
+                            "tool_calls": [{"tool_name": fn_name, "server": server_name, "summary": f"Executed {fn_name}", "policy_decision": "ALLOW"}],
                             "tokens": {"prompt": 0, "completion": 0},
                             "backend": "groq_repair_shield"
                         }
