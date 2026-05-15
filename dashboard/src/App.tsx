@@ -60,9 +60,12 @@ function App() {
   return (
     <BrowserRouter>
       <aside className="sidebar">
-        <div className="sidebar-brand">
-          <h1>⛨ GuardedAgent</h1>
-          <p>AI Agent Policy Dashboard</p>
+        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 16px' }}>
+          <img src="/logo.png" alt="ArmorIQ" style={{ width: '40px', height: '40px' }} />
+          <div style={{ textAlign: 'left' }}>
+            <h1 style={{ fontSize: '20px', margin: 0, letterSpacing: '-0.5px' }}>ArmorIQ</h1>
+            <p style={{ fontSize: '10px', margin: 0, color: 'var(--text-secondary)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1px' }}>Guarded Agent</p>
+          </div>
         </div>
 
         <div style={{ padding: '0 16px', marginBottom: '24px' }}>
@@ -120,6 +123,10 @@ function App() {
         <div className="tool-count" onClick={() => setShowToolsModal(true)} style={{ cursor: 'pointer' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
           {toolCount} MCP Tools
+        </div>
+
+        <div style={{ marginTop: 'auto', padding: '16px', fontSize: '10px', color: 'var(--text-secondary)', borderTop: '1px solid var(--border)', textAlign: 'center', opacity: 0.6 }}>
+           Product by <span style={{ color: 'var(--cyan)', fontWeight: 600 }}>Armoriq</span>
         </div>
       </aside>
 
