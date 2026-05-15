@@ -79,6 +79,8 @@ class MCPRegistry:
 
     def get_all_tools(self) -> list[dict]:
         """Returns live tool list in OpenAI format. Called fresh every conversation."""
+        if not self._tools:
+            logger.warning("No tools discovered! Registry might have failed on startup. Use the reload button or check logs.")
         return list(self._tools)
 
     async def call_tool(self, tool_name: str, arguments: dict) -> dict:

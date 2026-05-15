@@ -63,7 +63,15 @@ async def _run_conversation_internal(
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user",   "content": user_message},
     ]
-    tools = registry.get_all_tools()   # fresh every conversation — never cached
+    tools = registry.get_all_tools()
+    if not tools:
+        return {
+            "reply": "⚠️ System Warning: No MCP tools were discovered. The agent is currently in 'Safe Mode' and cannot execute DevOps or Search actions. Please try hitting the 'Sync/Reload' button in the Discovered Tools modal.",
+            "conversation_id": conversation_id,
+            "tool_calls": [],
+            "tokens": {"prompt": 0, "completion": 0},
+            "backend": "no_tools_found"
+        }
     total_tokens = {"prompt": 0, "completion": 0}
     tool_calls_log = []
 
