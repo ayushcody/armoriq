@@ -20,7 +20,7 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "filter_status": {"type": "string", "enum": ["healthy", "degraded", "down", "all"]}
+                "filter_status": {"type": "string"}
             },
             "additionalProperties": False,
         }
@@ -32,7 +32,7 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "service_name": {"type": "string"},
-                "lines": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}
+                "lines": {"type": "integer"}
             },
             "required": ["service_name"],
             "additionalProperties": False,
@@ -45,8 +45,8 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "service_name": {"type": "string"},
-                "severity": {"type": "string", "enum": ["low", "medium", "critical"]},
-                "message": {"type": "string", "maxLength": 200}
+                "severity": {"type": "string"},
+                "message": {"type": "string"}
             },
             "required": ["service_name", "severity", "message"],
             "additionalProperties": False,
@@ -59,7 +59,7 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "service_name": {"type": "string"},
-                "replicas": {"type": "integer", "minimum": 1, "maximum": 10}
+                "replicas": {"type": "integer"}
             },
             "required": ["service_name", "replicas"],
             "additionalProperties": False,
@@ -129,11 +129,15 @@ def handle_scale_service(args: dict) -> dict:
     name = args["service_name"]
     if name not in SERVICES:
         return mcp_error(-32602, f"Unknown service: {name}")
+    replicas = args.get("replicas", 1)
+    if not isinstance(replicas, int) or replicas < 1 or replicas > 10:
+        return mcp_error(-32602, f"Invalid arguments: replicas must be an integer between 1 and 10. Found: {replicas}")
+        
     old = SERVICES[name]["replicas"]
-    SERVICES[name]["replicas"] = args["replicas"]
+    SERVICES[name]["replicas"] = replicas
     return {"content": [{"type": "text", "text": json.dumps({
         "service": name, "old_replicas": old,
-        "new_replicas": args["replicas"], "status": "applied"
+        "new_replicas": replicas, "status": "applied"
     })}]}
 
 
