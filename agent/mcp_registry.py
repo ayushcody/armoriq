@@ -3,7 +3,7 @@ MCP Registry — discovers tools from MCP servers at runtime.
 Supports hot-reload without agent restart.
 """
 
-import json, logging, os
+import json, logging, os, asyncio
 from pathlib import Path
 from mcp_client import StdioMCPClient, SSEMCPClient
 
