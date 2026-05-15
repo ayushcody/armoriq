@@ -28,12 +28,21 @@ class StdioMCPClient:
             env=os.environ.copy()
         )
         asyncio.create_task(self._read_loop())
+        asyncio.create_task(self._read_stderr())
         await self._send("initialize", {
             "protocolVersion": "2024-11-05",
             "capabilities": {},
             "clientInfo": {"name": "guarded-agent", "version": "1.0.0"}
         })
         logger.info(f"[{self.name}] MCP stdio server started (pid={self._process.pid})")
+
+    async def _read_stderr(self):
+        """Read stderr in background to prevent buffer blockage."""
+        assert self._process and self._process.stderr
+        while not self._process.stderr.at_eof():
+            line = await self._process.stderr.readline()
+            if line:
+                logger.debug(f"[{self.name} STDERR] {line.decode().strip()}")
 
     async def _read_loop(self):
         assert self._process and self._process.stdout
@@ -54,7 +63,7 @@ class StdioMCPClient:
             except Exception as e:
                 logger.error(f"[{self.name}] Read loop error: {e}")
 
-    async def _send(self, method: str, params: dict, timeout: float = 10.0) -> dict:
+    async def _send(self, method: str, params: dict, timeout: float = 30.0) -> dict:
         msg_id = str(uuid.uuid4())
         payload = json.dumps({"jsonrpc": "2.0", "id": msg_id, "method": method, "params": params})
         loop = asyncio.get_event_loop()
