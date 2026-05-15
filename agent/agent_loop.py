@@ -89,9 +89,13 @@ async def run_conversation(
                     if decision["action"] == "ALLOW":
                         result = await registry.call_tool(fn_name, fn_args)
                         
-                        # Perfect Reply: Pass the repaired data back to the LLM for a natural response
-                        messages.append({"role": "assistant", "content": f"<function={fn_name}>{json.dumps(fn_args)}</function>"})
-                        messages.append({"role": "tool", "tool_call_id": "repair-id", "name": fn_name, "content": json.dumps(result)})
+                        # Perfect Reply: Reconstruct history and pass back to LLM
+                        messages = [
+                            {"role": "system", "content": SYSTEM_PROMPT},
+                            {"role": "user", "content": user_message},
+                            {"role": "assistant", "content": f"<function={fn_name}>{json.dumps(fn_args)}</function>"},
+                            {"role": "user", "content": f"The tool returned: {json.dumps(result)}. Please provide a natural language summary to the user."}
+                        ]
                         
                         final_response = await llm.chat(messages)
                         return {
