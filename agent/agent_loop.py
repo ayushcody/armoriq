@@ -27,14 +27,43 @@ async def run_conversation(
             _run_conversation_internal(user_message, llm, registry, policy, log_store, conversation_id),
             timeout=60.0
         )
-    except asyncio.TimeoutError:
-        logger.error("Conversation timed out after 60s")
+    except Exception as e:
+        # Check if this is the notorious Groq tool-calling glitch
+        error_str = str(e)
+        if "failed_generation" in error_str and "<function=" in error_str:
+            logger.warning("CATCHING GROQ GLITCH: Attempting auto-repair...")
+            try:
+                # Emergency Parser for <function=name{args}></function>
+                import re
+                match = re.search(r"<function=(\w+)(.*?)></function>", error_str)
+                if match:
+                    fn_name = match.group(1)
+                    raw_args = match.group(2).strip()
+                    # Clean up the args (Groq often misses the '=' or has trailing tags)
+                    if raw_args.startswith("="): raw_args = raw_args[1:]
+                    fn_args = json.loads(raw_args) if raw_args else {}
+                    
+                    # Manual Intercept & Execute
+                    decision = policy.evaluate({"name": fn_name, "args": fn_args})
+                    if decision["action"] == "ALLOW":
+                        result = await registry.call_tool(fn_name, fn_args)
+                        return {
+                            "reply": f"Fixed a tool glitch and retrieved data: {str(result)[:200]}...",
+                            "conversation_id": conversation_id or "repair-mode",
+                            "tool_calls": [{"tool_name": fn_name, "summary": f"Repaired call to {fn_name}", "policy_decision": "REPAIRED"}],
+                            "tokens": {"prompt": 0, "completion": 0},
+                            "backend": "groq_repair_shield"
+                        }
+            except Exception as repair_err:
+                logger.error(f"Repair shield failed: {repair_err}")
+
+        logger.error(f"Conversation error: {e}")
         return {
-            "reply": "⚠️ Error: The request timed out. This usually happens when an MCP server takes too long to respond. Please try again or check the server status.",
-            "conversation_id": conversation_id or "timeout",
+            "reply": f"⚠️ System Error: {error_str}. Please try re-phrasing your request.",
+            "conversation_id": conversation_id or "error",
             "tool_calls": [],
             "tokens": {"prompt": 0, "completion": 0},
-            "backend": "timeout_fail_safe"
+            "backend": "error_handler"
         }
 
 async def _run_conversation_internal(
