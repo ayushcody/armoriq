@@ -36,9 +36,9 @@ async def run_conversation(
                 # Bulletproof Parser for Groq Glitches
                 import re
                 # Match name and everything until the last </function>
-                match = re.search(r"<function=([\w\-_]+)[\s=]*(.*)", error_str, re.DOTALL)
+                match = re.search(r"<function=([\w\-_>]+)[\s=]*(.*)", error_str, re.DOTALL)
                 if match:
-                    fn_name = match.group(1).strip()
+                    fn_name = match.group(1).split(">")[0].strip() # Clean name of any >
                     raw_block = match.group(2).strip()
                     
                     # Strip the closing tag if it exists (at any position)
@@ -47,37 +47,42 @@ async def run_conversation(
                     fn_args = {}
                     if raw_args:
                         try:
-                            # Attempt to find the first '{' and last '}'
+                            # 1. Try standard JSON first
                             start = raw_args.find('{')
                             end = raw_args.rfind('}')
                             if start != -1 and end != -1:
-                                parsed = json.loads(raw_args[start:end+1])
+                                fn_args = json.loads(raw_args[start:end+1])
                             else:
-                                parsed = json.loads(raw_args)
-                                
-                            if isinstance(parsed, str):
-                                # If it just sent a raw string instead of JSON
-                                if fn_name in ["search_web", "get_web_answer"]:
-                                    fn_args = {"query": parsed}
-                                elif fn_name == "trigger_panic_mode":
-                                    fn_args = {"reason": parsed}
-                                else:
-                                    fn_args = {"service_name": parsed}
-                            elif isinstance(parsed, dict):
-                                fn_args = parsed
-                                # Auto-correct hallucinated argument names
-                                if fn_name in ["search_web", "get_web_answer"] and "query" not in fn_args:
-                                    for k, v in fn_args.items():
-                                        if isinstance(v, str):
-                                            fn_args["query"] = v
-                                            break
-                                elif fn_name == "get_service_logs" and "service_name" not in fn_args:
-                                    for k, v in fn_args.items():
-                                        if isinstance(v, str):
-                                            fn_args["service_name"] = v
-                                            break
-                        except:
-                            logger.warning(f"JSON repair fallback failed for: {raw_args}")
+                                # 2. Try parsing as a raw string (sometimes Groq just puts the query text there)
+                                try:
+                                    parsed = json.loads(raw_args)
+                                    if isinstance(parsed, str):
+                                        if fn_name in ["search_web", "get_web_answer"]: fn_args = {"query": parsed}
+                                        elif fn_name == "trigger_panic_mode": fn_args = {"reason": parsed}
+                                        else: fn_args = {"service_name": parsed}
+                                    else:
+                                        fn_args = parsed
+                                except:
+                                    # 3. Fallback: Regex for key="value" or key=value
+                                    pairs = re.findall(r'([\w\-]+)\s*=\s*(?:"([^"]*)"|(\S+))', raw_args)
+                                    for key, val1, val2 in pairs:
+                                        fn_args[key] = val1 if val1 else val2
+                                    
+                                    # 4. Final Fallback: If still empty, treat the whole thing as a query
+                                    if not fn_args and len(raw_args) > 2:
+                                        clean_raw = raw_args.strip(' "\'>=')
+                                        if fn_name in ["search_web", "get_web_answer"]: fn_args = {"query": clean_raw}
+                                        else: fn_args = {"service_name": clean_raw}
+                        except Exception as parse_err:
+                            logger.warning(f"Repair parser failed: {parse_err}")
+                    
+                    # Auto-correct hallucinated argument names
+                    if isinstance(fn_args, dict):
+                        if fn_name in ["search_web", "get_web_answer"] and "query" not in fn_args:
+                            for k, v in fn_args.items():
+                                if isinstance(v, str):
+                                    fn_args["query"] = v
+                                    break
                     
                     # Manual Intercept & Execute
                     decision = policy.evaluate({"name": fn_name, "args": fn_args})
