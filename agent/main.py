@@ -73,7 +73,11 @@ async def chat(body: dict):
         )
     except Exception as e:
         logging.error(f"Chat Route Error: {e}")
-        return {"error": str(e), "status": "error"}
+        return {
+            "reply": f"⚠️ Internal Server Error: {str(e)}",
+            "status": "error",
+            "conversation_id": body.get("conversation_id", "error")
+        }
 
 
 @app.post("/api/config/groq")

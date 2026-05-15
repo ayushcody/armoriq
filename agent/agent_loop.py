@@ -89,9 +89,10 @@ async def _run_conversation_internal(
 
         # Final answer — no more tool calls
         if choice.finish_reason == "stop" or not msg.tool_calls:
+            final_content = msg.content or "The agent has completed the task without additional commentary."
             await log_store.save_conversation(conversation_id, tool_calls_log, total_tokens)
             return {
-                "reply": msg.content,
+                "reply": final_content,
                 "conversation_id": conversation_id,
                 "tool_calls": tool_calls_log,
                 "tokens": total_tokens,
