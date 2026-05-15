@@ -88,10 +88,16 @@ async def run_conversation(
                     decision = policy.evaluate({"name": fn_name, "args": fn_args})
                     if decision["action"] == "ALLOW":
                         result = await registry.call_tool(fn_name, fn_args)
+                        
+                        # Perfect Reply: Pass the repaired data back to the LLM for a natural response
+                        messages.append({"role": "assistant", "content": f"<function={fn_name}>{json.dumps(fn_args)}</function>"})
+                        messages.append({"role": "tool", "tool_call_id": "repair-id", "name": fn_name, "content": json.dumps(result)})
+                        
+                        final_response = await llm.chat(messages)
                         return {
-                            "reply": f"Fixed a tool glitch and retrieved data: {str(result)[:200]}...",
+                            "reply": final_response.choices[0].message.content,
                             "conversation_id": conversation_id or "repair-mode",
-                            "tool_calls": [{"tool_name": fn_name, "summary": f"Repaired call to {fn_name}", "policy_decision": "REPAIRED"}],
+                            "tool_calls": [{"tool_name": fn_name, "summary": f"Repaired {fn_name}", "policy_decision": "REPAIRED"}],
                             "tokens": {"prompt": 0, "completion": 0},
                             "backend": "groq_repair_shield"
                         }
