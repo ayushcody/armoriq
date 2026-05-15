@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { sendChat } from '../api';
-import logo from '../assets/logo.png';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -62,15 +61,12 @@ export default function Chat({ messages, setMessages, loading, setLoading, conve
       <div className="messages-list" ref={scrollRef}>
         {messages.length === 0 && (
           <div className="empty-chat">
-            <img src={logo} alt="ArmorIQ" style={{ width: '48px', height: '48px', opacity: 0.5, marginBottom: '16px' }} />
-            <p>Ready to assist! Try asking "List our microservices" or "Search the web for Armoriq."</p>
+            <div className="empty-icon">🤖</div>
+            <p>Ready to assist! Try asking "List our microservices" or "Search the web."</p>
           </div>
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`message-bubble ${msg.role}`}>
-            {msg.role === 'assistant' && (
-              <img src={logo} alt="AI" className="agent-avatar" style={{ width: '24px', height: '24px', position: 'absolute', left: '-36px', top: '4px' }} />
-            )}
             <div className="message-content">{msg.content}</div>
             
             {msg.tool_calls && msg.tool_calls.length > 0 && (
@@ -97,7 +93,6 @@ export default function Chat({ messages, setMessages, loading, setLoading, conve
         ))}
         {loading && (
           <div className="message-bubble assistant loading">
-            <img src={logo} alt="AI" className="agent-avatar" style={{ width: '24px', height: '24px', position: 'absolute', left: '-36px', top: '4px' }} />
             <div className="typing-indicator">
               <span></span><span></span><span></span>
             </div>

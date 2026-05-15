@@ -9,8 +9,6 @@ import type { Message } from './pages/Chat';
 import { fetchHealth, getGroqConfig, setGroqConfig } from './api';
 import './index.css';
 
-import logo from './assets/logo.png';
-
 function App() {
   const [health, setHealth] = useState<any>(null);
   const [showToolsModal, setShowToolsModal] = useState(false);
@@ -62,14 +60,9 @@ function App() {
   return (
     <BrowserRouter>
       <aside className="sidebar">
-        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 16px' }}>
-          <img src={logo} alt="ArmorIQ" style={{ width: '38px', height: '38px' }} />
-          <div style={{ textAlign: 'left' }}>
-            <h1 style={{ fontSize: '18px', margin: 0, letterSpacing: '-0.5px', color: '#fff' }}>Guarded Agent</h1>
-            <p style={{ fontSize: '11px', margin: 0, color: 'var(--text-secondary)', fontWeight: 400 }}>
-              (product by <span style={{ color: 'var(--cyan)', fontWeight: 600 }}>ArmorIQ</span>)
-            </p>
-          </div>
+        <div className="sidebar-brand">
+          <h1>⛨ GuardedAgent</h1>
+          <p>AI Agent Policy Dashboard</p>
         </div>
 
         <div style={{ padding: '0 16px', marginBottom: '24px' }}>
