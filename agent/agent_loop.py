@@ -23,6 +23,19 @@ async def run_conversation(
     conversation_id: str | None = None,
 ) -> dict:
     conversation_id = conversation_id or str(uuid.uuid4())
+    
+    # Bonus: Pre-emptive Injection Shield (Guardrail Bonus)
+    injection_error = policy.detect_injection(user_message)
+    if injection_error:
+        logger.warning(f"BLOCKED raw prompt injection: {user_message}")
+        return {
+            "reply": f"Guardrail Alert: Your message was flagged as a potential prompt injection attack. Action blocked. Reason: {injection_error}",
+            "conversation_id": conversation_id,
+            "tool_calls": [],
+            "tokens": {"prompt": 0, "completion": 0},
+            "backend": "guardrail_active",
+        }
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user",   "content": user_message},

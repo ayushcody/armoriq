@@ -34,6 +34,7 @@ class PolicyEngine:
         self._store = store
         self._rules: list[PolicyRule] = store.load_all()
         self._approvals: dict[str, dict] = {}  # approval_id -> metadata dict
+        self.panic_mode = False  # The "Creative" bonus: Global lockdown state
         store.on_change(self._on_rules_changed)
         logger.info(f"PolicyEngine initialized with {len(self._rules)} rules")
 
@@ -42,25 +43,45 @@ class PolicyEngine:
         self._rules = self._store.load_all()
         logger.info(f"PolicyEngine: hot-reloaded {len(self._rules)} rules")
 
+    def detect_injection(self, text: str) -> str | None:
+        """Bonus: Check raw text for prompt injection patterns."""
+        t = text.lower()
+        for pattern in INJECTION_PATTERNS:
+            if pattern in t:
+                return f"Prompt injection pattern detected: '{pattern}'"
+        return None
+
     def evaluate(self, tool_call: dict) -> dict:
         """
         Called by agent_loop for every tool call before execution.
-        Priority: BLOCK_KEYWORD (always) > BLOCK_TOOL > REQUIRE_APPROVAL > VALIDATE_INPUT
-        Returns dict with keys: action, reason?, rule_id?, approval_id?, timeout?
+        Priority: PANIC_MODE > BLOCK_KEYWORD > BLOCK_TOOL > REQUIRE_APPROVAL
         """
+        if self.panic_mode:
+            return {
+                "action": "BLOCK",
+                "reason": "SYSTEM IN PANIC MODE: All tool execution is globally suspended for security.",
+                "rule_id": "builtin:panic_lock"
+            }
+
         name = tool_call["name"]
         args = tool_call["args"]
+
+        # Creative Bonus: Handle the Panic Trigger itself
+        if name == "trigger_panic_mode":
+            self.panic_mode = True
+            return {"action": "ALLOW"}
+
         args_str = json.dumps(args).lower()
         enabled = [r for r in self._rules if r.enabled]
 
-        # 1. Always check for prompt injection (built-in, no rule needed)
-        for pattern in INJECTION_PATTERNS:
-            if pattern in args_str:
-                return {
-                    "action": "BLOCK",
-                    "reason": f"Prompt injection pattern detected: '{pattern}'",
-                    "rule_id": "builtin:injection_guard"
-                }
+        # 1. Always check for prompt injection in arguments
+        injection_error = self.detect_injection(args_str)
+        if injection_error:
+            return {
+                "action": "BLOCK",
+                "reason": injection_error,
+                "rule_id": "builtin:injection_guard"
+            }
 
         # 2. BLOCK_KEYWORD rules (custom keywords from admin)
         for rule in enabled:

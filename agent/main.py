@@ -166,7 +166,15 @@ def deny(approval_id: str):
 
 @app.get("/api/stats")
 async def get_stats():
-    return await log_store.get_stats()
+    stats = await log_store.get_stats()
+    stats["panic_mode"] = policy.panic_mode
+    return stats
+
+
+@app.post("/api/policy/reset-panic")
+def reset_panic():
+    policy.panic_mode = False
+    return {"status": "panic_mode_deactivated"}
 
 
 @app.websocket("/ws/logs")
