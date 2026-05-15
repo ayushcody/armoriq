@@ -4,7 +4,7 @@ Callers use OpenAI chat completions format with tools support.
 """
 
 import os, logging
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class LLMClient:
         
     def set_api_key(self, api_key: str):
         if api_key:
-            self._client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
+            self._client = AsyncOpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
             logger.info("Groq API Key configured successfully")
         else:
             self._client = None
@@ -34,7 +34,7 @@ class LLMClient:
     def is_configured(self) -> bool:
         return self._client is not None
 
-    def chat(self, messages: list[dict], tools: list[dict] | None = None, temperature: float = 0.2):
+    async def chat(self, messages: list[dict], tools: list[dict] | None = None, temperature: float = 0.2):
         if not self._client:
             raise ValueError("Groq API Key is not configured. Please set it in the Dashboard.")
             
@@ -46,7 +46,7 @@ class LLMClient:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
 
-        return self._client.chat.completions.create(
+        return await self._client.chat.completions.create(
             model=GROQ_MODEL,
             **kwargs,
         )

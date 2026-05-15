@@ -45,7 +45,7 @@ async def run_conversation(
     tool_calls_log = []
 
     while True:
-        response = llm.chat(messages=messages, tools=tools if tools else None)
+        response = await llm.chat(messages=messages, tools=tools if tools else None)
 
         # Track tokens
         usage = response.usage
