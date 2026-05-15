@@ -33,15 +33,23 @@ async def run_conversation(
         if "failed_generation" in error_str and "<function=" in error_str:
             logger.warning("CATCHING GROQ GLITCH: Attempting auto-repair...")
             try:
-                # Emergency Parser for <function=name{args}></function>
+                # Universal Parser for <function=name {args} </function> or <function=name={args}></function>
                 import re
-                match = re.search(r"<function=(\w+)(.*?)></function>", error_str)
+                match = re.search(r"<function=([\w\-_]+)[\s=]*(.*?)[\s]*></function>", error_str, re.DOTALL)
                 if match:
-                    fn_name = match.group(1)
+                    fn_name = match.group(1).strip()
                     raw_args = match.group(2).strip()
-                    # Clean up the args (Groq often misses the '=' or has trailing tags)
-                    if raw_args.startswith("="): raw_args = raw_args[1:]
-                    fn_args = json.loads(raw_args) if raw_args else {}
+                    
+                    # Clean up the args (strip trailing garbage Groq sometimes adds)
+                    if raw_args.endswith("</function"): raw_args = raw_args[:-10].strip()
+                    
+                    fn_args = {}
+                    if raw_args:
+                        try:
+                            fn_args = json.loads(raw_args)
+                        except:
+                            # Fallback if JSON is slightly malformed
+                            logger.warning(f"JSON parse failed for repair, trying fallback: {raw_args}")
                     
                     # Manual Intercept & Execute
                     decision = policy.evaluate({"name": fn_name, "args": fn_args})

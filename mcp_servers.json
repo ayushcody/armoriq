@@ -3,19 +3,19 @@
     {
       "name": "devops-sentinel",
       "type": "stdio",
-      "command": "python3",
+      "command": "../.venv/bin/python3",
       "args": ["../custom_mcp_server/server.py"]
     },
     {
       "name": "research-assistant",
       "type": "stdio",
-      "command": "python3",
+      "command": "../.venv/bin/python3",
       "args": ["../research_mcp_server/server.py"]
     },
     {
       "name": "web-search",
       "type": "stdio",
-      "command": "python3",
+      "command": "../.venv/bin/python3",
       "args": ["../exa_mcp_server/server.py"]
     }
   ]
