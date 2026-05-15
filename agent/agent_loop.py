@@ -106,7 +106,7 @@ async def run_conversation(
                         return {
                             "reply": final_response.choices[0].message.content,
                             "conversation_id": conversation_id or "repair-mode",
-                            "tool_calls": [{"tool_name": fn_name, "server": server_name, "summary": f"Executed {fn_name}", "policy_decision": "ALLOW"}],
+                            "tool_calls": [{"tool_name": fn_name, "server_name": server_name, "summary": f"Executed {fn_name}", "policy_decision": "ALLOW"}],
                             "tokens": {"prompt": 0, "completion": 0},
                             "backend": "groq_repair_shield"
                         }
