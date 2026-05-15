@@ -51,9 +51,31 @@ async def run_conversation(
                             start = raw_args.find('{')
                             end = raw_args.rfind('}')
                             if start != -1 and end != -1:
-                                fn_args = json.loads(raw_args[start:end+1])
+                                parsed = json.loads(raw_args[start:end+1])
                             else:
-                                fn_args = json.loads(raw_args)
+                                parsed = json.loads(raw_args)
+                                
+                            if isinstance(parsed, str):
+                                # If it just sent a raw string instead of JSON
+                                if fn_name in ["search_web", "get_web_answer"]:
+                                    fn_args = {"query": parsed}
+                                elif fn_name == "trigger_panic_mode":
+                                    fn_args = {"reason": parsed}
+                                else:
+                                    fn_args = {"service_name": parsed}
+                            elif isinstance(parsed, dict):
+                                fn_args = parsed
+                                # Auto-correct hallucinated argument names
+                                if fn_name in ["search_web", "get_web_answer"] and "query" not in fn_args:
+                                    for k, v in fn_args.items():
+                                        if isinstance(v, str):
+                                            fn_args["query"] = v
+                                            break
+                                elif fn_name == "get_service_logs" and "service_name" not in fn_args:
+                                    for k, v in fn_args.items():
+                                        if isinstance(v, str):
+                                            fn_args["service_name"] = v
+                                            break
                         except:
                             logger.warning(f"JSON repair fallback failed for: {raw_args}")
                     
