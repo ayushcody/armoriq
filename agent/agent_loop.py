@@ -7,10 +7,10 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are a Guarded AI Assistant with specialized tools for Research and DevOps.
+SYSTEM_PROMPT = """You are a Guarded AI Assistant for Research and DevOps.
 Your goal is to provide accurate, cited information and manage infrastructure health.
-Use the provided tools whenever you need to search the web, fetch logs, or check system status.
-IMPORTANT: Use the function calling API strictly. Do not describe the tools or their names in your text response unless explaining a result.
+Use the provided tools whenever you need to search the web or check system status.
+CRITICAL: You must use the tool-calling API. Never, under any circumstances, generate <function=> tags or text-based tool calls.
 When a tool is blocked by policy, explain this clearly to the user."""
 
 
@@ -33,23 +33,29 @@ async def run_conversation(
         if "failed_generation" in error_str and "<function=" in error_str:
             logger.warning("CATCHING GROQ GLITCH: Attempting auto-repair...")
             try:
-                # Universal Parser for <function=name {args} </function> or <function=name={args}></function>
+                # Bulletproof Parser for Groq Glitches
                 import re
-                match = re.search(r"<function=([\w\-_]+)[\s=]*(.*?)[\s]*></function>", error_str, re.DOTALL)
+                # Match name and everything until the last </function>
+                match = re.search(r"<function=([\w\-_]+)[\s=]*(.*)", error_str, re.DOTALL)
                 if match:
                     fn_name = match.group(1).strip()
-                    raw_args = match.group(2).strip()
+                    raw_block = match.group(2).strip()
                     
-                    # Clean up the args (strip trailing garbage Groq sometimes adds)
-                    if raw_args.endswith("</function"): raw_args = raw_args[:-10].strip()
+                    # Strip the closing tag if it exists (at any position)
+                    raw_args = re.sub(r"</function.*?>", "", raw_block, flags=re.DOTALL).strip()
                     
                     fn_args = {}
                     if raw_args:
                         try:
-                            fn_args = json.loads(raw_args)
+                            # Attempt to find the first '{' and last '}'
+                            start = raw_args.find('{')
+                            end = raw_args.rfind('}')
+                            if start != -1 and end != -1:
+                                fn_args = json.loads(raw_args[start:end+1])
+                            else:
+                                fn_args = json.loads(raw_args)
                         except:
-                            # Fallback if JSON is slightly malformed
-                            logger.warning(f"JSON parse failed for repair, trying fallback: {raw_args}")
+                            logger.warning(f"JSON repair fallback failed for: {raw_args}")
                     
                     # Manual Intercept & Execute
                     decision = policy.evaluate({"name": fn_name, "args": fn_args})
