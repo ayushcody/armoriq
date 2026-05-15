@@ -120,9 +120,14 @@ async def run_conversation(
                     "backend": "error_handler"
                 }
 
-        logger.error(f"Conversation error: {e}")
+        logger.error(f"Conversation error: {type(e).__name__} - {e}")
+        
+        reply_msg = f"⚠️ System Error: {error_str or type(e).__name__}. Please try re-phrasing your request."
+        if "RateLimitError" in type(e).__name__ or "429" in error_str:
+            reply_msg = "⚠️ Groq Rate Limit Exceeded: You are hitting the Groq Free Tier limits. Please wait 10-15 seconds before sending another message."
+            
         return {
-            "reply": f"⚠️ System Error: {error_str}. Please try re-phrasing your request.",
+            "reply": reply_msg,
             "conversation_id": conversation_id or "error",
             "tool_calls": [],
             "tokens": {"prompt": 0, "completion": 0},
