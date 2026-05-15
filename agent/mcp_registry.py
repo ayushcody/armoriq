@@ -37,6 +37,10 @@ class MCPRegistry:
             for srv in config["servers"]:
                 try:
                     logger.info(f"Connecting to MCP server: {srv['name']}...")
+                    import sys
+                    if srv["command"] == "python3":
+                        srv["command"] = sys.executable
+                        logger.info(f"Dynamically resolved python to: {srv['command']}")
                     
                     # Robust Pathing Fix: Resolve relative paths to absolute project paths
                     if srv["type"] == "stdio" and srv["args"] and srv["args"][0].startswith("../"):
