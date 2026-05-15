@@ -37,10 +37,17 @@ class MCPRegistry:
             for srv in config["servers"]:
                 try:
                     logger.info(f"Connecting to MCP server: {srv['name']}...")
+                    
+                    # Robust Pathing Fix: Resolve relative paths to absolute project paths
+                    if srv["type"] == "stdio" and srv["args"] and srv["args"][0].startswith("../"):
+                        base_path = Path(__file__).parent.parent
+                        srv["args"][0] = str((base_path / srv["args"][0].replace("../", "")).resolve())
+                        logger.info(f"Resolved {srv['name']} path to: {srv['args'][0]}")
+
                     client = self._build_client(srv)
                     if hasattr(client, "start"):
-                        await client.start()
-                    raw_tools = await client.list_tools()
+                        await asyncio.wait_for(client.start(), timeout=15.0)
+                    raw_tools = await asyncio.wait_for(client.list_tools(), timeout=10.0)
                     self._clients[srv["name"]] = client
                     for tool in raw_tools:
                         self._tool_map[tool["name"]] = srv["name"]

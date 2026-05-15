@@ -22,6 +22,29 @@ async def run_conversation(
     log_store,     # LogStore
     conversation_id: str | None = None,
 ) -> dict:
+    try:
+        return await asyncio.wait_for(
+            _run_conversation_internal(user_message, llm, registry, policy, log_store, conversation_id),
+            timeout=60.0
+        )
+    except asyncio.TimeoutError:
+        logger.error("Conversation timed out after 60s")
+        return {
+            "reply": "⚠️ Error: The request timed out. This usually happens when an MCP server takes too long to respond. Please try again or check the server status.",
+            "conversation_id": conversation_id or "timeout",
+            "tool_calls": [],
+            "tokens": {"prompt": 0, "completion": 0},
+            "backend": "timeout_fail_safe"
+        }
+
+async def _run_conversation_internal(
+    user_message: str,
+    llm,
+    registry,
+    policy,
+    log_store,
+    conversation_id: str | None = None,
+) -> dict:
     conversation_id = conversation_id or str(uuid.uuid4())
     
     # Bonus: Pre-emptive Injection Shield (Guardrail Bonus)
